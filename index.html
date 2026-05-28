@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Tracker - Gestione Spese</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💰 Finance Tracker</h1>
+            <p>Gestisci le tue entrate e uscite</p>
+        </header>
+
+        <main>
+            <!-- Sezione Input -->
+            <section class="input-section">
+                <h2>Aggiungi Transazione</h2>
+                <form id="transactionForm">
+                    <div class="form-group">
+                        <label for="amount">Importo (€)</label>
+                        <input type="number" id="amount" placeholder="0.00" step="0.01" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="category">Categoria</label>
+                        <select id="category" required>
+                            <option value="">Seleziona categoria</option>
+                            <option value="Alimentari">🛒 Alimentari</option>
+                            <option value="Trasporto">🚗 Trasporto</option>
+                            <option value="Intrattenimento">🎮 Intrattenimento</option>
+                            <option value="Stipendio">💵 Stipendio</option>
+                            <option value="Utilities">⚡ Utilities</option>
+                            <option value="Salute">🏥 Salute</option>
+                            <option value="Altro">📌 Altro</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="type">Tipo</label>
+                        <select id="type" required>
+                            <option value="uscita">Uscita</option>
+                            <option value="entrata">Entrata</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="date">Data</label>
+                        <input type="date" id="date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Descrizione</label>
+                        <input type="text" id="description" placeholder="Es: Spesa al supermercato">
+                    </div>
+
+                    <button type="submit" class="btn-primary">Aggiungi</button>
+                </form>
+            </section>
+
+            <!-- Sezione Statistiche -->
+            <section class="stats-section">
+                <div class="stat-card">
+                    <h3>Entrate</h3>
+                    <p class="stat-value income" id="totalIncome">€ 0.00</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Uscite</h3>
+                    <p class="stat-value expense" id="totalExpense">€ 0.00</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Bilancio</h3>
+                    <p class="stat-value balance" id="totalBalance">€ 0.00</p>
+                </div>
+            </section>
+
+            <!-- Sezione Grafico -->
+            <section class="chart-section">
+                <h2>Grafico Mensile</h2>
+                <div class="chart-container">
+                    <canvas id="expenseChart"></canvas>
+                </div>
+            </section>
+
+            <!-- Sezione Transazioni -->
+            <section class="transactions-section">
+                <h2>Ultime Transazioni</h2>
+                <div class="transactions-controls">
+                    <select id="filterMonth">
+                        <option value="">Tutti i mesi</option>
+                    </select>
+                    <button class="btn-secondary" id="exportBtn">📥 Esporta CSV</button>
+                    <button class="btn-secondary" id="clearBtn">🗑️ Cancella Tutto</button>
+                </div>
+                <div id="transactionsList" class="transactions-list"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
