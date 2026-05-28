@@ -1,34 +1,163 @@
-// Finance Tracker App
+// Finance Tracker App with Authentication
 class FinanceTracker {
     constructor() {
-        this.transactions = this.loadTransactions();
+        this.currentUser = this.loadCurrentUser();
         this.chart = null;
         this.init();
     }
 
     init() {
-        this.setupEventListeners();
+        this.setupAuthEventListeners();
+        this.setupAppEventListeners();
+        
+        if (this.currentUser) {
+            this.showAppScreen();
+        } else {
+            this.showAuthScreen();
+        }
+    }
+
+    // ===== AUTHENTICATION =====
+
+    setupAuthEventListeners() {
+        // Tab switching
+        document.querySelectorAll('.auth-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => this.switchAuthTab(e.target.dataset.tab));
+        });
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', (e) => this.handleLogin(e));
+
+        // Register
+        document.getElementById('registerForm').addEventListener('submit', (e) => this.handleRegister(e));
+
+        // Logout
+        document.getElementById('logoutBtn')?.addEventListener('click', () => this.handleLogout());
+    }
+
+    switchAuthTab(tabName) {
+        document.querySelectorAll('.auth-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.querySelectorAll('.auth-form').forEach(form => {
+            form.classList.remove('active');
+        });
+
+        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        document.getElementById(`${tabName}Form`).classList.add('active');
+    }
+
+    handleLogin(e) {
+        e.preventDefault();
+
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+
+        const result = db.loginUser(email, password);
+
+        if (!result.success) {
+            this.showNotification(result.message, 'error');
+            return;
+        }
+
+        this.currentUser = result.user;
+        this.saveCurrentUser();
+        this.showNotification('Login riuscito!', 'success');
+        
+        // Pulisci form
+        document.getElementById('loginForm').reset();
+        
+        // Mostra app
+        setTimeout(() => this.showAppScreen(), 500);
+    }
+
+    handleRegister(e) {
+        e.preventDefault();
+
+        const name = document.getElementById('registerName').value;
+        const email = document.getElementById('registerEmail').value;
+        const password = document.getElementById('registerPassword').value;
+        const password2 = document.getElementById('registerPassword2').value;
+
+        if (password !== password2) {
+            this.showNotification('Le password non coincidono', 'error');
+            return;
+        }
+
+        if (password.length < 6) {
+            this.showNotification('La password deve avere almeno 6 caratteri', 'error');
+            return;
+        }
+
+        const result = db.registerUser(name, email, password);
+
+        if (!result.success) {
+            this.showNotification(result.message, 'error');
+            return;
+        }
+
+        this.showNotification('Registrazione completata! Accedi ora.', 'success');
+        
+        // Pulisci form
+        document.getElementById('registerForm').reset();
+        
+        // Torna al login
+        setTimeout(() => this.switchAuthTab('login'), 500);
+    }
+
+    handleLogout() {
+        if (confirm('Sei sicuro di voler uscire?')) {
+            this.currentUser = null;
+            this.saveCurrentUser();
+            this.showAuthScreen();
+            this.showNotification('Logout effettuato', 'success');
+        }
+    }
+
+    saveCurrentUser() {
+        localStorage.setItem('finance_tracker_current_user', JSON.stringify(this.currentUser));
+    }
+
+    loadCurrentUser() {
+        const data = localStorage.getItem('finance_tracker_current_user');
+        return data ? JSON.parse(data) : null;
+    }
+
+    // ===== UI =====
+
+    showAuthScreen() {
+        document.getElementById('authScreen').style.display = 'flex';
+        document.getElementById('appScreen').style.display = 'none';
+    }
+
+    showAppScreen() {
+        document.getElementById('authScreen').style.display = 'none';
+        document.getElementById('appScreen').style.display = 'block';
+        
+        document.getElementById('userName').textContent = this.currentUser.name;
         this.setTodayDate();
         this.render();
     }
 
-    setupEventListeners() {
-        document.getElementById('transactionForm').addEventListener('submit', (e) => this.addTransaction(e));
-        document.getElementById('exportBtn').addEventListener('click', () => this.exportCSV());
-        document.getElementById('clearBtn').addEventListener('click', () => this.clearAll());
-        document.getElementById('filterMonth').addEventListener('change', () => this.render());
+    // ===== APP FUNCTIONALITY =====
+
+    setupAppEventListeners() {
+        document.getElementById('transactionForm')?.addEventListener('submit', (e) => this.addTransaction(e));
+        document.getElementById('exportBtn')?.addEventListener('click', () => this.exportCSV());
+        document.getElementById('clearBtn')?.addEventListener('click', () => this.clearAll());
+        document.getElementById('filterMonth')?.addEventListener('change', () => this.render());
     }
 
     setTodayDate() {
         const today = new Date().toISOString().split('T')[0];
-        document.getElementById('date').value = today;
+        const dateInput = document.getElementById('date');
+        if (dateInput) dateInput.value = today;
     }
 
     addTransaction(e) {
         e.preventDefault();
 
         const transaction = {
-            id: Date.now(),
             amount: parseFloat(document.getElementById('amount').value),
             category: document.getElementById('category').value,
             type: document.getElementById('type').value,
@@ -36,37 +165,31 @@ class FinanceTracker {
             description: document.getElementById('description').value
         };
 
-        this.transactions.push(transaction);
-        this.saveTransactions();
-        this.render();
-        document.getElementById('transactionForm').reset();
-        this.setTodayDate();
+        const result = db.addTransaction(this.currentUser.id, transaction);
 
-        // Notifica
-        this.showNotification('Transazione aggiunta con successo!');
+        if (result.success) {
+            this.currentUser = db.getUserById(this.currentUser.id);
+            this.render();
+            document.getElementById('transactionForm').reset();
+            this.setTodayDate();
+            this.showNotification('Transazione aggiunta con successo!', 'success');
+        }
     }
 
     deleteTransaction(id) {
-        this.transactions = this.transactions.filter(t => t.id !== id);
-        this.saveTransactions();
-        this.render();
-    }
-
-    saveTransactions() {
-        localStorage.setItem('transactions', JSON.stringify(this.transactions));
-    }
-
-    loadTransactions() {
-        const data = localStorage.getItem('transactions');
-        return data ? JSON.parse(data) : [];
+        if (confirm('Elimina questa transazione?')) {
+            db.deleteTransaction(this.currentUser.id, id);
+            this.currentUser = db.getUserById(this.currentUser.id);
+            this.render();
+        }
     }
 
     clearAll() {
         if (confirm('Sei sicuro di voler eliminare tutte le transazioni?')) {
-            this.transactions = [];
-            this.saveTransactions();
+            db.clearUserTransactions(this.currentUser.id);
+            this.currentUser = db.getUserById(this.currentUser.id);
             this.render();
-            this.showNotification('Tutte le transazioni sono state cancellate!');
+            this.showNotification('Tutte le transazioni sono state cancellate!', 'success');
         }
     }
 
@@ -74,31 +197,16 @@ class FinanceTracker {
         const filterMonth = document.getElementById('filterMonth').value;
         
         if (!filterMonth) {
-            return this.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+            return this.currentUser.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
         }
 
-        return this.transactions
+        return this.currentUser.transactions
             .filter(t => t.date.startsWith(filterMonth))
             .sort((a, b) => new Date(b.date) - new Date(a.date));
     }
 
     calculateStats() {
-        let totalIncome = 0;
-        let totalExpense = 0;
-
-        this.transactions.forEach(t => {
-            if (t.type === 'entrata') {
-                totalIncome += t.amount;
-            } else {
-                totalExpense += t.amount;
-            }
-        });
-
-        return {
-            income: totalIncome,
-            expense: totalExpense,
-            balance: totalIncome - totalExpense
-        };
+        return db.calculateStats(this.currentUser.id);
     }
 
     updateStats() {
@@ -166,7 +274,7 @@ class FinanceTracker {
     getMonthlyData() {
         const months = {};
         
-        this.transactions.forEach(t => {
+        this.currentUser.transactions.forEach(t => {
             const month = t.date.substring(0, 7);
             
             if (!months[month]) {
@@ -196,7 +304,7 @@ class FinanceTracker {
 
     updateFilterMonths() {
         const months = new Set();
-        this.transactions.forEach(t => {
+        this.currentUser.transactions.forEach(t => {
             months.add(t.date.substring(0, 7));
         });
 
@@ -232,7 +340,6 @@ class FinanceTracker {
             const date = new Date(t.date);
             const formattedDate = date.toLocaleDateString('it-IT', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
             const symbol = t.type === 'entrata' ? '+' : '-';
-            const sign = t.type === 'entrata' ? '' : '';
 
             return `
                 <div class="transaction-item ${t.type}">
@@ -251,19 +358,12 @@ class FinanceTracker {
     }
 
     exportCSV() {
-        if (this.transactions.length === 0) {
-            alert('Nessuna transazione da esportare');
+        const csv = db.exportToCSV(this.currentUser.id);
+
+        if (!csv) {
+            this.showNotification('Nessuna transazione da esportare', 'error');
             return;
         }
-
-        let csv = 'Data,Categoria,Tipo,Importo,Descrizione\n';
-
-        this.transactions
-            .sort((a, b) => new Date(b.date) - new Date(a.date))
-            .forEach(t => {
-                const description = t.description.replace(/"/g, '""');
-                csv += `${t.date},"${t.category}","${t.type}","€ ${t.amount.toFixed(2)}","${description}"\n`;
-            });
 
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = window.URL.createObjectURL(blob);
@@ -273,16 +373,18 @@ class FinanceTracker {
         a.click();
         window.URL.revokeObjectURL(url);
 
-        this.showNotification('CSV esportato con successo!');
+        this.showNotification('CSV esportato con successo!', 'success');
     }
 
-    showNotification(message) {
+    showNotification(message, type = 'success') {
         const notification = document.createElement('div');
+        const bgColor = type === 'success' ? '#4ade80' : '#f87171';
+        
         notification.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
-            background: #4ade80;
+            background: ${bgColor};
             color: white;
             padding: 15px 25px;
             border-radius: 5px;
