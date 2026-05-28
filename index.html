@@ -8,97 +8,156 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>💰 Finance Tracker</h1>
-            <p>Gestisci le tue entrate e uscite</p>
-        </header>
+    <div class="app-wrapper">
+        <!-- Login/Register Screen -->
+        <div id="authScreen" class="auth-screen">
+            <div class="auth-container">
+                <h1>💰 Finance Tracker</h1>
+                <p>Gestisci le tue entrate e uscite</p>
 
-        <main>
-            <!-- Sezione Input -->
-            <section class="input-section">
-                <h2>Aggiungi Transazione</h2>
-                <form id="transactionForm">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" data-tab="login">Login</button>
+                    <button class="auth-tab" data-tab="register">Registrati</button>
+                </div>
+
+                <!-- Login Tab -->
+                <form id="loginForm" class="auth-form active">
                     <div class="form-group">
-                        <label for="amount">Importo (€)</label>
-                        <input type="number" id="amount" placeholder="0.00" step="0.01" required>
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" placeholder="tua@email.com" required>
                     </div>
-
                     <div class="form-group">
-                        <label for="category">Categoria</label>
-                        <select id="category" required>
-                            <option value="">Seleziona categoria</option>
-                            <option value="Alimentari">🛒 Alimentari</option>
-                            <option value="Trasporto">🚗 Trasporto</option>
-                            <option value="Intrattenimento">🎮 Intrattenimento</option>
-                            <option value="Stipendio">💵 Stipendio</option>
-                            <option value="Utilities">⚡ Utilities</option>
-                            <option value="Salute">🏥 Salute</option>
-                            <option value="Altro">📌 Altro</option>
-                        </select>
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" placeholder="••••••••" required>
                     </div>
-
-                    <div class="form-group">
-                        <label for="type">Tipo</label>
-                        <select id="type" required>
-                            <option value="uscita">Uscita</option>
-                            <option value="entrata">Entrata</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="date">Data</label>
-                        <input type="date" id="date" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="description">Descrizione</label>
-                        <input type="text" id="description" placeholder="Es: Spesa al supermercato">
-                    </div>
-
-                    <button type="submit" class="btn-primary">Aggiungi</button>
+                    <button type="submit" class="btn-primary">Accedi</button>
                 </form>
-            </section>
 
-            <!-- Sezione Statistiche -->
-            <section class="stats-section">
-                <div class="stat-card">
-                    <h3>Entrate</h3>
-                    <p class="stat-value income" id="totalIncome">€ 0.00</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Uscite</h3>
-                    <p class="stat-value expense" id="totalExpense">€ 0.00</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Bilancio</h3>
-                    <p class="stat-value balance" id="totalBalance">€ 0.00</p>
-                </div>
-            </section>
+                <!-- Register Tab -->
+                <form id="registerForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="registerName">Nome</label>
+                        <input type="text" id="registerName" placeholder="Il tuo nome" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerEmail">Email</label>
+                        <input type="email" id="registerEmail" placeholder="tua@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword">Password</label>
+                        <input type="password" id="registerPassword" placeholder="••••••••" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword2">Conferma Password</label>
+                        <input type="password" id="registerPassword2" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Registrati</button>
+                </form>
+            </div>
+        </div>
 
-            <!-- Sezione Grafico -->
-            <section class="chart-section">
-                <h2>Grafico Mensile</h2>
-                <div class="chart-container">
-                    <canvas id="expenseChart"></canvas>
-                </div>
-            </section>
+        <!-- Main App Screen -->
+        <div id="appScreen" class="app-screen" style="display: none;">
+            <div class="container">
+                <header>
+                    <div class="header-content">
+                        <h1>💰 Finance Tracker</h1>
+                        <p>Gestisci le tue entrate e uscite</p>
+                    </div>
+                    <div class="user-info">
+                        <span id="userName">Utente</span>
+                        <button id="logoutBtn" class="btn-logout">Esci</button>
+                    </div>
+                </header>
 
-            <!-- Sezione Transazioni -->
-            <section class="transactions-section">
-                <h2>Ultime Transazioni</h2>
-                <div class="transactions-controls">
-                    <select id="filterMonth">
-                        <option value="">Tutti i mesi</option>
-                    </select>
-                    <button class="btn-secondary" id="exportBtn">📥 Esporta CSV</button>
-                    <button class="btn-secondary" id="clearBtn">🗑️ Cancella Tutto</button>
-                </div>
-                <div id="transactionsList" class="transactions-list"></div>
-            </section>
-        </main>
+                <main>
+                    <!-- Sezione Input -->
+                    <section class="input-section">
+                        <h2>Aggiungi Transazione</h2>
+                        <form id="transactionForm">
+                            <div class="form-group">
+                                <label for="amount">Importo (€)</label>
+                                <input type="number" id="amount" placeholder="0.00" step="0.01" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="category">Categoria</label>
+                                <select id="category" required>
+                                    <option value="">Seleziona categoria</option>
+                                    <option value="Alimentari">🛒 Alimentari</option>
+                                    <option value="Trasporto">🚗 Trasporto</option>
+                                    <option value="Intrattenimento">🎮 Intrattenimento</option>
+                                    <option value="Stipendio">💵 Stipendio</option>
+                                    <option value="Utilities">⚡ Utilities</option>
+                                    <option value="Salute">🏥 Salute</option>
+                                    <option value="Altro">📌 Altro</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="type">Tipo</label>
+                                <select id="type" required>
+                                    <option value="uscita">Uscita</option>
+                                    <option value="entrata">Entrata</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="date">Data</label>
+                                <input type="date" id="date" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="description">Descrizione</label>
+                                <input type="text" id="description" placeholder="Es: Spesa al supermercato">
+                            </div>
+
+                            <button type="submit" class="btn-primary">Aggiungi</button>
+                        </form>
+                    </section>
+
+                    <!-- Sezione Statistiche -->
+                    <section class="stats-section">
+                        <div class="stat-card">
+                            <h3>Entrate</h3>
+                            <p class="stat-value income" id="totalIncome">€ 0.00</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Uscite</h3>
+                            <p class="stat-value expense" id="totalExpense">€ 0.00</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Bilancio</h3>
+                            <p class="stat-value balance" id="totalBalance">€ 0.00</p>
+                        </div>
+                    </section>
+
+                    <!-- Sezione Grafico -->
+                    <section class="chart-section">
+                        <h2>Grafico Mensile</h2>
+                        <div class="chart-container">
+                            <canvas id="expenseChart"></canvas>
+                        </div>
+                    </section>
+
+                    <!-- Sezione Transazioni -->
+                    <section class="transactions-section">
+                        <h2>Ultime Transazioni</h2>
+                        <div class="transactions-controls">
+                            <select id="filterMonth">
+                                <option value="">Tutti i mesi</option>
+                            </select>
+                            <button class="btn-secondary" id="exportBtn">📥 Esporta CSV</button>
+                            <button class="btn-secondary" id="clearBtn">🗑️ Cancella Tutto</button>
+                        </div>
+                        <div id="transactionsList" class="transactions-list"></div>
+                    </section>
+                </main>
+            </div>
+        </div>
     </div>
 
+    <script src="db.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
